@@ -1,0 +1,30 @@
+{
+  "name": "data-toggle-js",
+  "main": "data-toggle.js",
+  "version": "1.0.1",
+  "homepage": "https://github.com/christophermh44/data-toggle-js",
+  "description": "A small lib that allows some elements to toggle classes on other ones, just by clicking on/touching the trigger.",
+  "keywords": [
+    "jquery",
+    "data",
+    "toggle",
+    "js",
+    "javascript",
+    "plug-in",
+    "vanilla"
+  ],
+  "authors": [
+    "Christopher Machicoane-Hurtaud"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "~2.2.1"
+  }
+}
