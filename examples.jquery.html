@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="fr">
+<head>
+	<meta charset="UTF-8">
+	<title>Data-Toggle Integration</title>
+	<meta content="IE=edge" http-equiv=X-UA-Compatible>
+	<meta content="width=device-width,initial-scale=1,user-sacalable=no" name=viewport>
+	<style>
+		.dt.active::after {
+			/* content: " (active)"; */
+			content: " (active)";
+		}
+
+		.custom-class {
+			color: red;
+		}
+
+		.custom-class::after {
+			content: " (custom-class)";
+		}
+	</style>
+</head>
+<body data-toggle=".body-remover-target.active">
+<h1>Data-Toggle Integration</h1>
+
+<h2>Simple</h2>
+<div>
+	<button type="button" class="dt simple-trigger" data-toggle=".simple-target">Toggle</button>
+	<div class="dt simple-target">
+		Target
+	</div>
+</div>
+
+<h2>Multiple triggers</h2>
+<div>
+	<button type="button" class="dt multiple-triggers-trigger-1" data-toggle=".multiple-triggers-target">Toggle 1</button>
+	<button type="button" class="dt multiple-triggers-trigger-2" data-toggle=".multiple-triggers-target">Toggle 2</button>
+	<div class="dt multiple-triggers-target">
+		Target
+	</div>
+</div>
+
+<h2>Multiple targets</h2>
+<div>
+	<button type="button" class="dt multiple-targets-trigger" data-toggle=".multiple-targets-target">Toggle</button>
+	<div class="dt multiple-targets-target">
+		Target 1
+	</div>
+	<div class="dt multiple-targets-target">
+		Target 2
+	</div>
+</div>
+
+<h2>Multiple triggers and targets</h2>
+<div>
+	<button type="button" class="dt multiple-triggers-targets-trigger-1" data-toggle=".multiple-triggers-targets-target">Toggle 1</button>
+	<button type="button" class="dt multiple-triggers-targets-trigger-2" data-toggle=".multiple-triggers-targets-target">Toggle 2</button>
+	<div class="dt multiple-triggers-targets-target">
+		Target 1
+	</div>
+	<div class="dt multiple-triggers-targets-target">
+		Target 2
+	</div>
+</div>
+
+<h2>Grouping</h2>
+<div>
+	<button type="button" class="dt grouping-trigger-1" data-toggle=".grouping-target-1" data-toggle-group="groupname">Toggle 1</button>
+	<button type="button" class="dt grouping-trigger-2" data-toggle=".grouping-target-2" data-toggle-group="groupname">Toggle 2</button>
+	<div class="dt grouping-target-1">
+		Target 1
+	</div>
+	<div class="dt grouping-target-2">
+		Target 2
+	</div>
+</div>
+
+<h2>Body as class remover</h2>
+<div>
+	<button type="button" class="dt body-remover-trigger" data-toggle=".body-remover-target">Toggle</button>
+	<div class="dt body-remover-target">
+		Target
+	</div>
+</div>
+
+<h2>Custom class</h2>
+<div>
+	<button type="button" class="dt custom-class-trigger" data-toggle=".custom-class-target" data-toggle-class="custom-class">Toggle</button>
+	<div class="dt custom-class-target">
+		Target
+	</div>
+</div>
+
+<h2>Custom event triggering</h2>
+<div>
+	<button type="button" class="dt custom-event-trigger" data-toggle=".custom-event-target" data-toggle-event="custom-event">Toggle</button>
+	<div class="dt custom-event-target">
+		Target
+	</div>
+</div>
+
+<script src="//code.jquery.com/jquery-latest.min.js"></script>
+<script src="jquery-data-toggle.js"></script>
+<script>
+	(function(window, $) {
+		$.dataToggle.init();
+
+		$('.custom-event-target').on('custom-event', function(event) {
+			var status = event.originalEvent.detail[0];
+			alert('Status: ' + status);
+		});
+	})(window, jQuery);
+</script>
+</body>
+</html>
