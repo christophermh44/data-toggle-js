@@ -1,5 +1,7 @@
 # data-toggle-js (beta)
 
+**NOTE: THIS REPO HAS BEEN UPDATED AND DOCUMENTATION ACTUALLY NEEDS UPDATE.**
+
 Use data-toggle attribute to toggle classes on other HTML elements.
 
 ## Really short documentation
