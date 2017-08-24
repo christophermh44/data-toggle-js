@@ -25,12 +25,13 @@
 ;(function(window, document) {
     'use strict';
 
-    // compatibility fixes
-    if (!(NodeList.prototype.hasOwnProperty('forEach'))) {
-        NodeList.prototype.forEach = Array.prototype.forEach;
-    }
-    if (!(Object.prototype.hasOwnProperty('values'))) {
-        Object.prototype.values = function(o) {
+    window.DataToggle = function(initSettings, directLoad) {
+        /**
+         * Private function that creates array of values from object
+         * @param o object to use
+         * @returns {Array} array of values from object
+         */
+        function objectValues(o) {
             var values = [];
             for (var key in o) {
                 if (o.hasOwnProperty(key)) {
@@ -39,32 +40,29 @@
             }
             return values;
         }
-    }
 
-    window.DataToggle = function(initSettings, directLoad) {
         /**
-         * Private function that extends a javascript object with other ones.
-         * @param out objects to combine
+         * For-each binding for node list iterations
+         * @param elements dom elements to iterate
+         * @param callback item callback function
+         */
+        function forEach(elements, callback) {
+            [].forEach.call(elements, callback);
+        }
+
+        /**
+         * Private function with infinite parameters that extends a javascript object with other ones.
          * @returns {*|{}} extended object or empty object
          */
-        function extend(out) {
-            out = out || {};
+        function extend() {
             for (var i = 1; i < arguments.length; i++) {
-                var obj = arguments[i];
-                if (!obj) {
-                    continue;
-                }
-                for (var key in obj) {
-                    if (obj.hasOwnProperty(key)) {
-                        if (typeof obj[key] === 'object') {
-                            out[key] = extend(out[key], obj[key]);
-                        } else {
-                            out[key] = obj[key];
-                        }
+                for (var key in arguments[i]) {
+                    if (arguments[i].hasOwnProperty(key)) {
+                        arguments[0][key] = arguments[i][key];
                     }
                 }
             }
-            return out;
+            return arguments[0];
         }
 
         /**
@@ -74,18 +72,14 @@
          * @returns {*} true if the element matches.
          */
         function matches(el, selector) {
-            if (!el) return false;
-            return (el.matches || el.matchesSelector || el.msMatchesSelector || el.mozMatchesSelector || el.webkitMatchesSelector || el.oMatchesSelector).call(el, selector);
-        }
-
-        /**
-         * Private function that checks if an element belongs to another
-         * @param el supposed parent element
-         * @param child supposed child element
-         * @returns {boolean|*} true if the child element is contained by the supposed parent
-         */
-        function contains(el, child) {
-            return el !== child && el.contains(child);
+            if (!el) {
+                return false;
+            }
+            var matchesCallable = (el.matches || el.matchesSelector || el.msMatchesSelector || el.mozMatchesSelector || el.webkitMatchesSelector || el.oMatchesSelector);
+            if (!matchesCallable) {
+                return false;
+            }
+            return matchesCallable.call(el, selector);
         }
 
         /**
@@ -98,29 +92,17 @@
             var filtered = [];
             var test = typeof selector === 'string'
                 ? function(a, b) {
-                    return matches(a, b);
-                } : function(a, b) {
-                    return a === b;
-                };
-            els.forEach(function(el) {
+                return matches(a, b);
+            }
+                : function(a, b) {
+                return a === b;
+            };
+            forEach(els, function(el) {
                 if (test(el, selector)) {
                     filtered.push(el);
                 }
             });
             return filtered;
-        }
-
-        /**
-         * Private function that returns the first item of an array if the given list is an array. Otherwise, it returns the object itself.
-         * @param list object to use
-         * @returns {*} object isolated
-         */
-        function isolate(list) {
-            return (list instanceof Array || list instanceof NodeList)
-                ? list.length > 0
-                    ? list[0]
-                    : null
-                : list;
         }
 
         /**
@@ -146,19 +128,9 @@
          * @param classes array of classes
          */
         function addClasses(elements, classes) {
-            var addClassesHandle = function(element) {
-                for (var c = 0; c < classes.length; ++c) {
-                    var className = classes[c];
-                    if (!element.classList.contains(className)) {
-                        element.classList.add(className);
-                    }
-                }
-            };
-            if (elements instanceof Array || elements instanceof NodeList) {
-                elements.forEach(addClassesHandle);
-            } else {
-                addClassesHandle(elements);
-            }
+            forEach(elements, function(element) {
+                element.classList.add.apply(element.classList, classes);
+            });
         }
 
         /**
@@ -167,19 +139,9 @@
          * @param classes array of classes
          */
         function removeClasses(elements, classes) {
-            var removeClassesHandle = function(element) {
-                for (var c = 0; c < classes.length; ++c) {
-                    var className = classes[c];
-                    if (element.classList.contains(className)) {
-                        element.classList.remove(className);
-                    }
-                }
-            };
-            if (elements instanceof Array || elements instanceof NodeList) {
-                elements.forEach(removeClassesHandle);
-            } else {
-                removeClassesHandle(elements);
-            }
+            forEach(elements, function(element) {
+                element.classList.remove.apply(element.classList, classes);
+            });
         }
 
         /**
@@ -188,21 +150,9 @@
          * @param classes array of classes
          */
         function toggleClasses(elements, classes) {
-            var toggleClassesHandle = function(element) {
-                for (var c = 0; c < classes.length; ++c) {
-                    var className = classes[c];
-                    if (element.classList.contains(className)) {
-                        element.classList.remove(className);
-                    } else {
-                        element.classList.add(className);
-                    }
-                }
-            };
-            if (elements instanceof Array || elements instanceof NodeList) {
-                elements.forEach(toggleClassesHandle);
-            } else {
-                toggleClassesHandle(elements);
-            }
+            forEach(elements, function(element) {
+                element.classList.toggle.apply(element.classList, classes);
+            });
         }
 
         var instance = {
@@ -278,30 +228,21 @@
                 },
 
                 /**
-                 * Intialize events handling
-                 * @param element triggering element
-                 * @param target targeted elements
-                 * @param options settings of data-toggle
-                 * @param callback function to call when event is triggered and valid
-                 * @returns {*} This function had to return an object containing each handles referenced by their event type.
+                 * Gets the method name
+                 * @param element element that contains the method name
+                 * @returns {string} method name
                  */
-                triggers: function(element, target, options, callback) {
-                    var handleClick = function(event) {
-                        return callback(event);
-                    };
-                    var handleKeyUp = function(event) {
-                        if (event.which === 13 || event.keyCode === 13) {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            return callback(event);
-                        }
-                    };
-                    element.addEventListener('click', handleClick);
-                    element.addEventListener('keyup', handleKeyUp);
-                    return {
-                        click: handleClick,
-                        keyup: handleKeyUp
-                    };
+                method: function(element) {
+                    return element.getAttribute('data-toggle-method');
+                },
+
+                /**
+                 * Test if data-toggle has to bubble the event
+                 * @param element element that contains the attribute or not
+                 * @returns {boolean} true if is has to bubble, false otherwise
+                 */
+                isBubble: function(element) {
+                    return element.hasAttribute('data-toggle-bubble');
                 },
 
                 /**
@@ -311,37 +252,113 @@
 
                 /**
                  * Function allowing you to prevent data-toggle behavior on other components you are using
+                 * @param $element
+                 * @param $target
+                 * @param $el
+                 * @param options
                  * @returns {boolean} false if you want to use data-toggle after the triggered event, true otherwise.
                  */
                 preventingCallback: function($element, $target, $el, options) {
                     return false;
-                }
+                },
+
+                /**
+                 * Methods to trigger data-toggle event. Defaut is the click on element. But you can add some
+                 * behaviors, on check and radio input types for examples (their states is indicated by the check mark)
+                 */
+                triggerMethods: {
+                    button: {
+                        /**
+                         * Triggering and event binding
+                         * @param element element that will receive the event binding
+                         * @param target target of the element
+                         * @param options data-toggle settings
+                         * @param callback callback to call when the event is triggered and valid. Please note that
+                         *                 this callback will take one parameter (the JS Event object) and one optional
+                         *                 parameter: an object that can contain the 'status' to apply and a 'callback'
+                         *                 that will be called to manually change the status of the triggers.
+                         * @returns {{click: handleClick}} Object containing the binding functions of events
+                         */
+                        trigger: function(element, target, options, callback) {
+                            var handleClick = function(event) {
+                                return callback(event);
+                            };
+                            element.addEventListener('click', handleClick, false);
+                            return {
+                                click: handleClick
+                            };
+                        },
+                        /**
+                         * Preventing callback for trigger methods can be useful to force data-toggle to not be executed
+                         * when clicking on some of your components
+                         * @param $element triggering element
+                         * @param $target targeted elements
+                         * @param $el event element
+                         * @param options data-toggle settings
+                         * @returns {boolean} true if you want to stop data-toggle, false otherwise.
+                         */
+                        preventingCallback: function(event, $element, $target, $el, options) {
+                            return false;
+                        }
+                    },
+                    check: {
+                        trigger: function(element, target, options, callback) {
+                            var handleChange = function(event) {
+                                var status = element.checked;
+                                /*
+                                 this callback updates checkboxes. Without this callback, classes will be added to
+                                 controls, but they won't change their status.
+                                 */
+                                return callback(event, {
+                                    status: status,
+                                    callback: function(el, elStatus) {
+                                        if (el.hasAttribute('type')
+                                            && (el.getAttribute('type') === 'radio' || el.getAttribute('type') === 'checkbox')) {
+                                            if (elStatus === true || elStatus === false) {
+                                                el.checked = elStatus;
+                                            } else {
+                                                el.checked = !el.checked;
+                                            }
+                                        }
+                                    }
+                                });
+                            };
+                            element.addEventListener('change', handleChange, false);
+                            return {
+                                change: handleChange
+                            };
+                        },
+                        // Here we have to cancel data-toggle behavior when clicking on labels associated to input.
+                        preventingCallback: function(event, $element, $target, $el, options) {
+                            if ($el.tagName.toLowerCase() === 'label' && $el.hasAttribute('for')) {
+                                var forElement = document.getElementById($el.getAttribute('for'));
+                                var dataToggles = options.dataToggleElements();
+                                if (filter(dataToggles, forElement).length > 0) {
+                                    return true;
+                                }
+                            }
+                            return false;
+                        }
+                    }
+                },
+
+                /**
+                 * Have to specify a default triggering behavior to data-toggle.
+                 * @see triggerMethods to know which key you want to use.
+                 */
+                defaultTriggerMethod: 'button'
             },
 
             /**
-             * Checks if the element concerned by the triggered event is contained inside an already toggled one.
-             * @param $element triggering element
-             * @param $target targeted elements
-             * @param $el element of the event
-             * @param classes classes to check
-             * @returns {boolean} true if the element is contained, false otherwise
+             * Dispatch all custom events
+             * @param events list of events to dispatch
+             * @param element list of elements to trigger events on
+             * @param status details of event
              */
-            isContained: function($element, $target, $el, classes) {
-                var contained = false;
-                if (matches(isolate($target), '.' + classes.join(', .'))) {
-                    for (var i = 0; i < $el.length; ++i) {
-                        var containing = false;
-                        for (var j = 0; j < $target.length; ++j) {
-                            if (contains($target[j], $el[i])) {
-                                containing = true;
-                            }
-                        }
-                        if (containing && !matches($target, $element[i]) && !matches($target.parentNode, $el[i])) {
-                            contained = true;
-                        }
-                    }
+            dispatchEvents: function(events, element, status) {
+                for (var e = 0; e < events.length; ++e) {
+                    triggerEvent(element, events[e], [status]);
                 }
-                return contained;
             },
 
             /**
@@ -350,26 +367,24 @@
              * @param groups array of groups names
              * @param classes array of classes names
              * @param events array of custom events to trigger
+             * @param additional additional data
              */
-            handleGroupedToggles: function($element, groups, classes, events) {
+            handleGroupedToggles: function($element, groups, classes, events, additional) {
                 var self = this;
-                if (groups.length > 0) {
-                    for (var i = 0; i < groups.length; ++i) {
-                        var group = groups[i];
-                        self.settings.dataToggleGroupElements(group).forEach(function(groupElement) {
-                            if (groupElement !== $element) {
-                                removeClasses([groupElement], classes);
-                                var destination = self.settings.target(groupElement);
-                                document.querySelectorAll(destination).forEach(function(destinationElement) {
-                                    for (var j = 0; j < events.length; ++j) {
-                                        var ev = events[j];
-                                        triggerEvent(destinationElement, ev, [false]);
-                                    }
-                                    removeClasses([destinationElement], classes);
-                                });
-                            }
+                var dataToggleGroupElements = function(groupElement) {
+                    if (groupElement !== $element) {
+                        removeClasses([groupElement], classes);
+                        if (additional.hasOwnProperty('callback')) {
+                            additional.callback(groupElement, false);
+                        }
+                        forEach(document.querySelectorAll(self.settings.target(groupElement)), function(destinationElement) {
+                            self.dispatchEvents(events, destinationElement, false);
+                            removeClasses([destinationElement], classes);
                         });
                     }
+                };
+                for (var g = 0; g < groups.length; ++g) {
+                    forEach(self.settings.dataToggleGroupElements(groups[g]), dataToggleGroupElements);
                 }
             },
 
@@ -379,22 +394,19 @@
              * @param target toggling expression
              * @param classes array of classes
              * @param events array of custom events to trigger
+             * @param additional additional data
              */
-            handleSameToggles: function($target, target, classes, events) {
+            handleSameToggles: function($target, target, classes, events, additional) {
                 var self = this;
-                self.settings.dataToggleSameElements(target).forEach(function(sameElement) {
+                forEach(self.settings.dataToggleSameElements(target), function(sameElement) {
                     var status = filter($target, '.' + classes.join(' ')).length > 0;
-                    if (status) {
-                        addClasses([sameElement], classes);
-                    } else {
-                        removeClasses([sameElement], classes);
+                    (status ? addClasses : removeClasses)([sameElement], classes);
+                    if (additional.hasOwnProperty('callback')) {
+                        additional.callback(sameElement, status);
                     }
-                    for (var i = 0; i < events.length; ++i) {
-                        var ev = events[i];
-                        $target.forEach(function(targetElement) {
-                            triggerEvent(targetElement, ev, [status]);
-                        });
-                    }
+                    forEach($target, function(targetElement) {
+                        self.dispatchEvents(events, targetElement, status);
+                    });
                 });
             },
 
@@ -406,14 +418,17 @@
              * @param classes array of classes
              * @returns {*|boolean} true if the data-toggle behavior has to be cancelled, false otherwise
              */
-            handlePreventing: function($element, $el, $target, classes) {
-                var self = this;
-                var isContained = self.isContained($element, $target, $el, classes);
-                var dtElements = self.settings.dataToggleElements();
-                return (
-                    (isContained && !(filter(dtElements, $el).length > 0) && !(filter(dtElements, $el.parentNode)))
-                    || self.settings.preventingCallback($element, $target, $el, self.settings)
-                );
+            handlePreventing: function(event, $element, $el, $target, classes) {
+                if (filter(this.settings.dataToggleElements(), $el).length > 0 && $element !== $el) {
+                    return true;
+                }
+                var preventingByTriggerType = false;
+                for (var trigger in this.settings.triggerMethods) {
+                    if (this.settings.triggerMethods.hasOwnProperty(trigger) && !preventingByTriggerType) {
+                        preventingByTriggerType = this.settings.triggerMethods[trigger].preventingCallback(event, $element, $target, $el, this.settings);
+                    }
+                }
+                return preventingByTriggerType || this.settings.preventingCallback(event, $element, $target, $el, this.settings);
             },
 
             /**
@@ -422,24 +437,31 @@
              * @param element triggering elements
              * @param target targeted elements
              * @param options data-toggle settings
+             * @param additional additional data
              * @returns {boolean} as a system event handling function, it has to return a boolean to indicates if the event can be bubbled or not.
              */
-            dataToggle: function(event, element, target, options) {
-                var self = this;
-                var $el = [event.target];
+            dataToggle: function(event, element, target, options, additional) {
+                var $el = event.target;
                 var $element = typeof element === 'string' ? document.querySelectorAll(element) : element;
                 var $target = typeof target === 'string' ? document.querySelectorAll(target) : target;
                 var groups = (typeof options.groups === 'string' ? options.groups.split(' ') : options.groups) || [];
                 var events = (typeof options.events === 'string' ? options.events.split(' ') : options.events) || [];
-                var classes = (typeof options.classes === 'string' ? options.classes.split(' ') : options.classes) || Object.values(self.settings.activeClasses);
-                if (self.handlePreventing($element, $el, $target, classes)) {
+                var classes = (typeof options.classes === 'string' ? options.classes.split(' ') : options.classes) || objectValues(this.settings.activeClasses);
+                additional = additional || {};
+                if (this.handlePreventing(event, $element, $el, $target, classes)) {
                     return true;
                 }
-                event.preventDefault();
-                self.handleGroupedToggles($element, groups, classes, events);
-                toggleClasses($target, classes);
-                self.handleSameToggles($target, target, classes, events);
-                return false;
+                if (!(this.settings.isBubble($element))) {
+                    event.preventDefault();
+                }
+                this.handleGroupedToggles($element, groups, classes, events, additional);
+                if (additional.hasOwnProperty('status')) {
+                    (additional.status ? addClasses : removeClasses)($target, classes);
+                } else {
+                    toggleClasses($target, classes);
+                }
+                this.handleSameToggles($target, target, classes, events, additional);
+                return !(event.defaultPrevented);
             },
 
             /**
@@ -448,11 +470,10 @@
              * @param binds events handling function
              */
             storeBind: function(element, binds) {
-                var self = this;
-                if (self.binds[self.settings.target(element)] === undefined) {
-                    self.binds[self.settings.target(element)] = [];
+                if (this.binds[this.settings.target(element)] === undefined) {
+                    this.binds[this.settings.target(element)] = [];
                 }
-                self.binds[self.settings.target(element)].push({
+                this.binds[this.settings.target(element)].push({
                     element: element,
                     binds: binds
                 });
@@ -466,10 +487,15 @@
              */
             bind: function(element, target, options) {
                 var self = this;
-                options = options || {groups: null, events: null, classes: null};
-                var binds = self.settings.triggers(element, target, options, function(event) {
+                options = options || {};
+                var method = this.settings.triggerMethods[
+                    this.settings.triggerMethods.hasOwnProperty(options.method)
+                        ? options.method
+                        : this.settings.defaultTriggerMethod
+                    ].trigger;
+                var binds = method(element, target, options, function(event, additional) {
                     if (!event.defaultPrevented) {
-                        self.dataToggle.call(self, event, element, target, options);
+                        self.dataToggle.call(self, event, element, target, options, additional);
                     }
                 });
                 self.storeBind(element, binds);
@@ -480,15 +506,17 @@
              */
             bindAll: function() {
                 var self = this;
-                this.settings.dataToggleElements().forEach(function(element) {
+                forEach(this.settings.dataToggleElements(), function(element) {
                     var target = self.settings.target(element);
                     var groups = self.settings.groups(element);
                     var events = self.settings.events(element);
                     var classes = self.settings.classes(element);
+                    var method = self.settings.method(element);
                     self.bind(element, target, {
                         groups: groups,
                         events: events,
-                        classes: classes
+                        classes: classes,
+                        method: method
                     });
                 });
             },
@@ -498,11 +526,10 @@
              * @param toggleExpression toggling expression
              */
             unbind: function(toggleExpression) {
-                var self = this;
-                if (!self.binds.hasOwnProperty(toggleExpression)) {
+                if (!this.binds.hasOwnProperty(toggleExpression)) {
                     return;
                 }
-                var elementBinds = self.binds[toggleExpression];
+                var elementBinds = this.binds[toggleExpression];
                 for (var i = 0; i < elementBinds.length; ++i) {
                     var eb = elementBinds[i];
                     var element = eb.element;
@@ -513,17 +540,16 @@
                         }
                     }
                 }
-                delete self.binds[toggleExpression];
+                delete this.binds[toggleExpression];
             },
 
             /**
              * Unbind all data-toggle found in the page
              */
             unbindAll: function() {
-                var self = this;
-                for (var b in self.binds) {
-                    if (self.binds.hasOwnProperty(b)) {
-                        self.unbind(b);
+                for (var b in this.binds) {
+                    if (this.binds.hasOwnProperty(b)) {
+                        this.unbind(b);
                     }
                 }
             },
@@ -532,20 +558,19 @@
              * Refresh binds. Could be useful when dynamic content is added or removed inside the current page.
              */
             refresh: function() {
-                var self = this;
-                self.unbindAll();
-                self.bindAll();
+                this.unbindAll();
+                this.bindAll();
             },
 
             /**
              * Initialisation call
              * @param settings data-toggle settings object that will extend the default behavior.
-             * @param directLoad if true, do not wait for window to load
+             * @param loadDirect if true, do not wait for window to load
              */
-            init: function(settings, directLoad) {
+            init: function(settings, loadDirect) {
                 var self = this;
                 this.settings = extend({}, self.settings, settings);
-                if (!!directLoad) {
+                if (!!loadDirect) {
                     self.bindAll();
                 } else {
                     window.addEventListener('load', function() {
