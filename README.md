@@ -1,6 +1,6 @@
 # data-toggle-js (beta)
 
-**NOTE: THIS REPO HAS BEEN UPDATED AND DOCUMENTATION ACTUALLY NEEDS UPDATE.**
+**NOTE: THIS REPO HAS BEEN UPDATED AND DOCUMENTATION ACTUALLY NEEDS UPDATE. If you want to initialize data-toggle in your project quickly, just look to example.js**
 
 Use data-toggle attribute to toggle classes on other HTML elements.
 
