@@ -129,7 +129,9 @@
          */
         function addClasses(elements, classes) {
             forEach(elements, function(element) {
-                element.classList.add.apply(element.classList, classes);
+                forEach(classes, function(cssClass) {
+                    element.classList.add.apply(element.classList, cssClass);
+                });
             });
         }
 
@@ -140,7 +142,9 @@
          */
         function removeClasses(elements, classes) {
             forEach(elements, function(element) {
-                element.classList.remove.apply(element.classList, classes);
+                forEach(classes, function(cssClass) {
+                    element.classList.remove.apply(element.classList, cssClass);
+                });
             });
         }
 
@@ -151,7 +155,9 @@
          */
         function toggleClasses(elements, classes) {
             forEach(elements, function(element) {
-                element.classList.toggle.apply(element.classList, classes);
+                forEach(classes, function(cssClass) {
+                    element.classList.toggle.apply(element.classList, cssClass);
+                });
             });
         }
 
